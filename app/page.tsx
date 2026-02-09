@@ -7,7 +7,7 @@ export default function Home() {
   const [games, setGames] = useState<any[]>([]);
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState(''); // <--- ADD THIS LINE
   // Load news on startup
   useEffect(() => {
     axios.get('/api/news').then(res => setNews(res.data));
@@ -17,12 +17,29 @@ export default function Home() {
   const handleSearch = async () => {
     setLoading(true);
     const res = await axios.post('/api/search', { query });
-    setGames(res.data);
-    setLoading(false);
-  };
+    setError(''); // Clear previous errors
+    setGames([]); // Clear previous results
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    try {
+    const res = await axios.post('/api/search', { query });
+    setGames(res.data);
+  } catch (err: any) {
+    console.error("Search failed:", err);
+    // This will show the real error from the backend on your screen
+    setError(err.response?.data?.error || 'Something went wrong. Check Vercel Logs.');
+  } finally {
+    setLoading(false); // <--- THIS FIXES THE "STUCK" ISSUE
+  }
+};
+
+return (
+  <div className="min-h-screen bg-gray-900 text-white p-8">
+    {/* Inside the return(), above the Game Database section */}
+    {error && (
+      <div className="bg-red-500 text-white p-4 rounded mb-4 font-bold">
+        ERROR: {error}
+      </div>
+    )}
       {/* Header & Search */}
       <h1 className="text-4xl font-bold mb-8 text-center text-purple-500">GameNexus DB</h1>
       
