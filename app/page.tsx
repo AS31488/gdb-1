@@ -9,8 +9,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // NEW: State to track which trailer is currently open
-  const [activeTrailer, setActiveTrailer] = useState<number | null>(null);
+  // Tracks which game's detail panel is open
+  const [activeGameId, setActiveGameId] = useState<number | null>(null);
+  // Tracks which specific video ID is currently playing
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     axios.get('/api/news').then(res => setNews(res.data)).catch(console.error);
@@ -21,7 +23,8 @@ export default function Home() {
     setLoading(true);
     setError('');
     setGames([]);
-    setActiveTrailer(null); // Close any open trailers on new search
+    setActiveGameId(null);
+    setActiveVideoId(null);
 
     try {
       const res = await axios.post('/api/search', { query });
@@ -34,12 +37,15 @@ export default function Home() {
     }
   };
 
-  // NEW: Function to open/close the trailer
-  const toggleTrailer = (gameId: number) => {
-    if (activeTrailer === gameId) {
-      setActiveTrailer(null); // Close if already open
+  const toggleGamePanel = (gameId: number) => {
+    if (activeGameId === gameId) {
+      // Close the panel and stop any playing video
+      setActiveGameId(null);
+      setActiveVideoId(null);
     } else {
-      setActiveTrailer(gameId); // Open the clicked one
+      // Open the panel, but don't auto-play a video yet
+      setActiveGameId(gameId);
+      setActiveVideoId(null); 
     }
   };
 
@@ -91,7 +97,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-6 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        {/* GAME RESULTS (Left Column) */}
+        {/* GAME RESULTS */}
         <div className="lg:col-span-8 space-y-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -122,11 +128,11 @@ export default function Home() {
                   <div>
                     <div className="flex justify-between items-start">
                       
-                      {/* NEW: Clickable Title with Play Icon */}
+                      {/* Clickable Title */}
                       <button 
-                        onClick={() => toggleTrailer(game.id)}
+                        onClick={() => toggleGamePanel(game.id)}
                         className="text-2xl font-bold text-white hover:text-cyan-400 transition-colors text-left flex items-center gap-2"
-                        title="Click to view trailer"
+                        title="Click to view media"
                       >
                         {game.name}
                         {game.videos && game.videos.length > 0 && (
@@ -148,20 +154,51 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* NEW: Embedded YouTube Trailer Player */}
-                  {activeTrailer === game.id && (
+                  {/* MEDIA PANEL (Visible when active) */}
+                  {activeGameId === game.id && (
                     <div className="mt-4 border-t border-gray-700 pt-4">
                       {game.videos && game.videos.length > 0 ? (
-                        <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
-                          <iframe 
-                            width="100%" 
-                            height="100%" 
-                            src={`https://www.youtube.com/embed/${game.videos[0].video_id}?autoplay=1`} 
-                            title={`${game.name} Trailer`} 
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowFullScreen
-                          ></iframe>
+                        <div className="space-y-4">
+                          
+                          {/* Video Player (Shows only if a video is selected) */}
+                          {activeVideoId && (
+                            <div className="w-full aspect-video rounded-lg overflow-hidden border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.2)] bg-black">
+                              <iframe 
+                                width="100%" 
+                                height="100%" 
+                                src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1`} 
+                                title={`${game.name} Video`} 
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                              ></iframe>
+                            </div>
+                          )}
+
+                          {/* Video Selection List */}
+                          <div>
+                            <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-2">Available Media Files:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {game.videos.map((video: any, index: number) => (
+                                <button
+                                  key={video.video_id}
+                                  onClick={() => setActiveVideoId(video.video_id)}
+                                  className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-2 ${
+                                    activeVideoId === video.video_id 
+                                    ? 'bg-cyan-900/50 text-cyan-300 border-cyan-500' 
+                                    : 'bg-gray-900/50 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200'
+                                  }`}
+                                >
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                  </svg>
+                                  {/* IGDB provides names like "Trailer" or "Gameplay Video". We fallback to "Video X" if name is missing */}
+                                  {video.name || `Video ${index + 1}`}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
                         </div>
                       ) : (
                         <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-500 text-center font-mono">
@@ -190,7 +227,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* NEWS SIDEBAR (Right Column) */}
+        {/* NEWS SIDEBAR */}
         <div className="lg:col-span-4 space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <span className="w-2 h-8 bg-purple-500 rounded-full"></span>

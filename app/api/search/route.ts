@@ -27,10 +27,9 @@ export async function POST(request: Request) {
 
     // 3. Query IGDB (Search)
     // specific query syntax for IGDB
-    const igdbResponse = await axios.post(
+   const igdbResponse = await axios.post(
       'https://api.igdb.com/v4/games',
-      // NOTICE the "videos.video_id" added to the fields list below:
-      `search "${query}"; fields name, cover.url, first_release_date, summary, similar_games.name, similar_games.cover.url, videos.video_id; limit 12;`,
+      `search "${query}"; fields name, cover.url, first_release_date, summary, similar_games.name, similar_games.cover.url, videos.video_id, videos.name; limit 12;`,
       {
         headers: {
           'Client-ID': CLIENT_ID,
@@ -38,7 +37,7 @@ export async function POST(request: Request) {
         },
       }
     );
-
+    
     return NextResponse.json(igdbResponse.data);
 
   } catch (error: any) {
