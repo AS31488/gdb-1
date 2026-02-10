@@ -9,25 +9,29 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Tracks which game's detail panel is open
   const [activeGameId, setActiveGameId] = useState<number | null>(null);
-  // Tracks which specific video ID is currently playing
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     axios.get('/api/news').then(res => setNews(res.data)).catch(console.error);
   }, []);
 
-  const handleSearch = async () => {
-    if (!query) return;
+  // NEW: Refactored search function to accept any game name directly
+  const executeSearch = async (searchTerm: string) => {
+    if (!searchTerm) return;
+    
+    setQuery(searchTerm); // Updates the search bar text to match the clicked game
     setLoading(true);
     setError('');
     setGames([]);
     setActiveGameId(null);
     setActiveVideoId(null);
 
+    // Scroll back to the top when a new search triggers
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     try {
-      const res = await axios.post('/api/search', { query });
+      const res = await axios.post('/api/search', { query: searchTerm });
       setGames(res.data);
     } catch (err: any) {
       console.error("Search failed:", err);
@@ -39,11 +43,9 @@ export default function Home() {
 
   const toggleGamePanel = (gameId: number) => {
     if (activeGameId === gameId) {
-      // Close the panel and stop any playing video
       setActiveGameId(null);
       setActiveVideoId(null);
     } else {
-      // Open the panel, but don't auto-play a video yet
       setActiveGameId(gameId);
       setActiveVideoId(null); 
     }
@@ -76,10 +78,10 @@ export default function Home() {
               placeholder="Search database (e.g. Cyberpunk 2077)..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyDown={(e) => e.key === 'Enter' && executeSearch(query)} // Uses updated function
             />
             <button 
-              onClick={handleSearch}
+              onClick={() => executeSearch(query)} // Uses updated function
               disabled={loading}
               className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 rounded-r-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -128,7 +130,7 @@ export default function Home() {
                   <div>
                     <div className="flex justify-between items-start">
                       
-                      {/* Clickable Title */}
+                      {/* Clickable Title for Media */}
                       <button 
                         onClick={() => toggleGamePanel(game.id)}
                         className="text-2xl font-bold text-white hover:text-cyan-400 transition-colors text-left flex items-center gap-2"
@@ -154,13 +156,11 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* MEDIA PANEL (Visible when active) */}
+                  {/* MEDIA PANEL */}
                   {activeGameId === game.id && (
                     <div className="mt-4 border-t border-gray-700 pt-4">
                       {game.videos && game.videos.length > 0 ? (
                         <div className="space-y-4">
-                          
-                          {/* Video Player (Shows only if a video is selected) */}
                           {activeVideoId && (
                             <div className="w-full aspect-video rounded-lg overflow-hidden border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.2)] bg-black">
                               <iframe 
@@ -175,7 +175,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Video Selection List */}
                           <div>
                             <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-2">Available Media Files:</p>
                             <div className="flex flex-wrap gap-2">
@@ -192,7 +191,6 @@ export default function Home() {
                                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                                   </svg>
-                                  {/* IGDB provides names like "Trailer" or "Gameplay Video". We fallback to "Video X" if name is missing */}
                                   {video.name || `Video ${index + 1}`}
                                 </button>
                               ))}
@@ -208,15 +206,20 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Connected Games */}
+                  {/* CONNECTED GAMES ENGINE */}
                   {game.similar_games && (
                     <div className="mt-6 pt-4 border-t border-gray-800">
                       <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-2">Related Data Nodes:</p>
                       <div className="flex flex-wrap gap-2">
-                        {game.similar_games.slice(0, 3).map((sim: any) => (
-                          <span key={sim.id} className="text-xs bg-gray-900/50 text-gray-300 px-3 py-1 rounded-full border border-gray-700">
+                        {game.similar_games.slice(0, 5).map((sim: any) => (
+                          <button 
+                            key={sim.id} 
+                            onClick={() => executeSearch(sim.name)}
+                            title={`Search database for ${sim.name}`}
+                            className="text-xs bg-gray-900/50 hover:bg-purple-900/40 text-gray-300 hover:text-purple-300 px-3 py-1 rounded-full border border-gray-700 hover:border-purple-500/50 transition-all cursor-pointer text-left"
+                          >
                             {sim.name}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>
