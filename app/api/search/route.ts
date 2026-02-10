@@ -29,11 +29,12 @@ export async function POST(request: Request) {
     // specific query syntax for IGDB
     const igdbResponse = await axios.post(
       'https://api.igdb.com/v4/games',
-      `search "${query}"; fields name, cover.url, first_release_date, summary, similar_games.name, similar_games.cover.url; limit 12;`,
+      // NOTICE the "videos.video_id" added to the fields list below:
+      `search "${query}"; fields name, cover.url, first_release_date, summary, similar_games.name, similar_games.cover.url, videos.video_id; limit 12;`,
       {
         headers: {
           'Client-ID': CLIENT_ID,
-          'Authorization': `Bearer ${accessToken}`, // Pass the fresh token
+          'Authorization': `Bearer ${accessToken}`,
         },
       }
     );
