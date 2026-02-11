@@ -58,12 +58,13 @@ export default function Home() {
       <div className="relative py-16 text-center overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-600/20 blur-[120px] rounded-full pointer-events-none" />
         
-        <h1 className="relative z-10 text-6xl font-black tracking-tighter mb-4">
+        <h1 className="relative z-10 text-6xl font-black tracking-tighter mb-4 uppercase">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">
-            ADAMNEXUS
-          </span>{' '}
+            ADAM NEXUS
+          </span>
           DB
         </h1>
+        
         <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
           The ultimate open-source database for game developers and players.
         </p>
