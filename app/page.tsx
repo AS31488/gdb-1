@@ -60,7 +60,7 @@ export default function Home() {
         
         <h1 className="relative z-10 text-6xl font-black tracking-tighter mb-4">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">
-            GAMENEXUS
+            ADAMNEXUS
           </span>{' '}
           DB
         </h1>
